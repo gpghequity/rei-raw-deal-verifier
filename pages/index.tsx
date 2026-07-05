@@ -285,7 +285,7 @@ export default function Home() {
             Team Analysis Report ({result.calculator_data.asset_type})
           </h2>
 
-          {Object.entries(result.sections || {}).map(([key, section]) => (
+          {Object.entries(result.sections || {}).map(([key, section]: [string, any]) => (
             <div key={key} style={{ marginBottom: 30, border: '1px solid #ddd', padding: 20, borderRadius: 4 }}>
               <h3 style={{ color: '#1e3c72', marginBottom: 15 }}>{section.title}</h3>
               {section.rows ? (
