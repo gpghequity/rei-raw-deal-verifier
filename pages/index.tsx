@@ -33,7 +33,7 @@ export default function Home() {
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Failed');
         return;
