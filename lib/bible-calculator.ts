@@ -24,11 +24,13 @@ export class BibleCalculator {
   public scenarios: Scenario[] = [];
   public ceiling_prices: any = {};
   public asset_type: string = '';
+  private k_factor: number = 0;
 
   constructor(propertyData: PropertyData) {
     this.data = propertyData;
     this.asset_type = propertyData.asset_type || 'Commercial';
     this.constants = getBibleConstants(this.asset_type);
+    this.k_factor = (this.constants.K_COMM || this.constants.K_RESI || 0.08679);
     this.calculate();
   }
 
@@ -40,7 +42,7 @@ export class BibleCalculator {
     this.bible_noi = gross - this.bible_expenses;
     this.bank_loan = Math.round(price * this.constants.LTV);
     this.buyer_equity = price - this.bank_loan;
-    this.bank_ds = Math.round(this.bank_loan * this.constants.K_COMM);
+    this.bank_ds = Math.round(this.bank_loan * this.k_factor);
 
     this.buildScenarios();
     this.calculateCeilingPrices();
@@ -48,7 +50,7 @@ export class BibleCalculator {
 
   private buildScenarios(): void {
     this.scenarios = [];
-    const dscr_levels = [1.25, 1.15];
+    const dscr_levels = this.constants.DSCR_LEVELS || [1.25, 1.15];
 
     for (const dscr of dscr_levels) {
       // Bank Only
@@ -66,7 +68,7 @@ export class BibleCalculator {
       });
 
       // 8% IO
-      const io_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_IO);
+      const io_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_OWNER_IO);
       this.scenarios.push({
         dscr,
         structure: '8% Equity IO',
@@ -81,7 +83,7 @@ export class BibleCalculator {
       });
 
       // 8% Amort
-      const amort_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_AMORT);
+      const amort_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_OWNER_AMORT);
       this.scenarios.push({
         dscr,
         structure: '8% Equity Amort',
@@ -97,7 +99,7 @@ export class BibleCalculator {
 
       // Seller Finance
       const seller_note = this.data.asking_price - BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH - this.bank_loan;
-      const sf_buyer_cost = Math.round(BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_IO);
+      const sf_buyer_cost = Math.round(BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_OWNER_IO);
       const sf_seller_ds = Math.round(seller_note * BIBLE_SHARED.K_SELLER);
 
       this.scenarios.push({
@@ -118,17 +120,18 @@ export class BibleCalculator {
   private calculateCeilingPrices(): void {
     this.ceiling_prices = {
       'Bank Only': this.calcCeiling(this.bank_ds, 0, 0),
-      '8% Equity IO': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_IO, 0),
-      '8% Equity Amort': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_AMORT, 0),
-      'Seller Finance': this.calcCeiling(this.bank_ds, BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_IO, this.buyer_equity * BIBLE_SHARED.K_SELLER),
+      '8% Equity IO': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_OWNER_IO, 0),
+      '8% Equity Amort': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_OWNER_AMORT, 0),
+      'Seller Finance': this.calcCeiling(this.bank_ds, BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_OWNER_IO, this.buyer_equity * BIBLE_SHARED.K_SELLER),
     };
   }
 
   private calcCeiling(bank_ds: number, equity_cost: number, seller_ds: number): any {
+    const floor_10k = this.constants.POCKET_FLOOR_CONSERVATIVE || 10000;
     return {
-      pocket_25k: Math.round(((25000 + bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
-      pocket_10k: Math.round(((10000 + bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
-      breakeven: Math.round(((bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
+      pocket_25k: Math.round(((25000 + bank_ds + equity_cost + seller_ds) / this.k_factor) / this.constants.LTV),
+      pocket_10k: Math.round(((floor_10k + bank_ds + equity_cost + seller_ds) / this.k_factor) / this.constants.LTV),
+      breakeven: Math.round(((bank_ds + equity_cost + seller_ds) / this.k_factor) / this.constants.LTV),
     };
   }
 }
