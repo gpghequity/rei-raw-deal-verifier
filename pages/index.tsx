@@ -21,7 +21,7 @@ export default function Home() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileRead = async (file: File) => {
+  const handleFileRead = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
