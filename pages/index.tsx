@@ -25,7 +25,7 @@ export default function Home() {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const content = e.target?.result;
+        const content = e.target?.result as string;
         resolve(content);
       };
       reader.onerror = () => reject(reader.error);
