@@ -291,9 +291,9 @@ export default function Home() {
               {section.rows ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                   <tbody>
-                    {section.rows.map((row, i) => (
+                    {section.rows.map((row: any, i: number) => (
                       <tr key={i} style={{ background: i === 0 ? '#e7e6e6' : i % 2 ? '#f2f2f2' : 'white' }}>
-                        {row.map((cell, j) => (
+                        {row.map((cell: any, j: number) => (
                           <td key={j} style={{ padding: 10, border: '1px solid #ddd' }}>
                             {cell}
                           </td>
