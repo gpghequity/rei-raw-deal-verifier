@@ -1,0 +1,162 @@
+import React, { useState } from 'react';
+
+export default function Home() {
+  const [form, setForm] = useState({
+    address: '',
+    asking_price: '',
+    gross_income: '',
+    seller_expenses: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: form.address,
+          asking_price: parseFloat(form.asking_price) || 0,
+          gross_income: parseFloat(form.gross_income) || 0,
+          seller_expenses: form.seller_expenses ? parseFloat(form.seller_expenses) : undefined,
+        }),
+      });
+
+      const data = await response.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed');
+        return;
+      }
+
+      setResult(data);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 40, fontFamily: 'system-ui' }}>
+      <h1 style={{ color: '#1e3c72', marginBottom: 10 }}>Raw Deal Verifier</h1>
+      <p style={{ color: '#666', marginBottom: 30 }}>Bible-Based Commercial Property Analysis</p>
+
+      {!result ? (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Address *</label>
+            <input
+              type="text"
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              placeholder="123 Main St, City, State"
+              required
+              style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Asking Price *</label>
+              <input
+                type="number"
+                name="asking_price"
+                value={form.asking_price}
+                onChange={handleChange}
+                placeholder="700000"
+                required
+                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Gross Income *</label>
+              <input
+                type="number"
+                name="gross_income"
+                value={form.gross_income}
+                onChange={handleChange}
+                placeholder="75000"
+                required
+                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Seller Expenses (Optional)</label>
+            <input
+              type="number"
+              name="seller_expenses"
+              value={form.seller_expenses}
+              onChange={handleChange}
+              placeholder="Leave blank to use 35% floor"
+              style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+          </div>
+
+          {error && <div style={{ color: '#c00', padding: 10, background: '#fee', borderRadius: 4 }}>{error}</div>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: 12,
+              background: '#2a5298',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {loading ? 'Analyzing...' : 'Run Analysis'}
+          </button>
+        </form>
+      ) : (
+        <div>
+          <button onClick={() => setResult(null)} style={{ marginBottom: 20, padding: 8, cursor: 'pointer' }}>
+            ← Back
+          </button>
+
+          <h2 style={{ color: '#1e3c72', marginBottom: 20 }}>Team Analysis Report</h2>
+
+          {Object.entries(result.sections || {}).map(([key, section]: [string, any]) => (
+            <div key={key} style={{ marginBottom: 30, border: '1px solid #ddd', padding: 20, borderRadius: 4 }}>
+              <h3 style={{ color: '#1e3c72', marginBottom: 15 }}>{section.title}</h3>
+              {section.rows ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {section.rows.map((row: any, i: number) => (
+                      <tr key={i} style={{ background: i === 0 ? '#e7e6e6' : i % 2 ? '#f2f2f2' : 'white' }}>
+                        {row.map((cell: any, j: number) => (
+                          <td key={j} style={{ padding: 10, border: '1px solid #ddd' }}>
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ lineHeight: 1.6, color: '#555' }}>{section.content}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
