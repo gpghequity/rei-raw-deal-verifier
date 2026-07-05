@@ -1,4 +1,4 @@
-import { BIBLE_CONSTANTS, PropertyData } from './bible-constants';
+import { BIBLE_CONSTANTS_BY_TYPE, BIBLE_SHARED, PropertyData, getBibleConstants } from './bible-constants';
 
 export type Scenario = {
   dscr: number;
@@ -15,6 +15,7 @@ export type Scenario = {
 
 export class BibleCalculator {
   private data: PropertyData;
+  private constants: any;
   public bible_noi: number = 0;
   public bible_expenses: number = 0;
   public bank_loan: number = 0;
@@ -22,9 +23,12 @@ export class BibleCalculator {
   public bank_ds: number = 0;
   public scenarios: Scenario[] = [];
   public ceiling_prices: any = {};
+  public asset_type: string = '';
 
   constructor(propertyData: PropertyData) {
     this.data = propertyData;
+    this.asset_type = propertyData.asset_type || 'Commercial';
+    this.constants = getBibleConstants(this.asset_type);
     this.calculate();
   }
 
@@ -32,11 +36,11 @@ export class BibleCalculator {
     const gross = this.data.gross_income;
     const price = this.data.asking_price;
 
-    this.bible_expenses = Math.round(gross * BIBLE_CONSTANTS.EXPENSE_FLOOR);
+    this.bible_expenses = Math.round(gross * this.constants.EXPENSE_FLOOR);
     this.bible_noi = gross - this.bible_expenses;
-    this.bank_loan = Math.round(price * BIBLE_CONSTANTS.LTV);
+    this.bank_loan = Math.round(price * this.constants.LTV);
     this.buyer_equity = price - this.bank_loan;
-    this.bank_ds = Math.round(this.bank_loan * BIBLE_CONSTANTS.K_COMM);
+    this.bank_ds = Math.round(this.bank_loan * this.constants.K_COMM);
 
     this.buildScenarios();
     this.calculateCeilingPrices();
@@ -62,7 +66,7 @@ export class BibleCalculator {
       });
 
       // 8% IO
-      const io_cost = Math.round(this.buyer_equity * 0.08);
+      const io_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_IO);
       this.scenarios.push({
         dscr,
         structure: '8% Equity IO',
@@ -77,7 +81,7 @@ export class BibleCalculator {
       });
 
       // 8% Amort
-      const amort_cost = Math.round(this.buyer_equity * 0.09577);
+      const amort_cost = Math.round(this.buyer_equity * BIBLE_SHARED.K_AMORT);
       this.scenarios.push({
         dscr,
         structure: '8% Equity Amort',
@@ -92,15 +96,15 @@ export class BibleCalculator {
       });
 
       // Seller Finance
-      const seller_note = this.data.asking_price - 100000 - this.bank_loan;
-      const sf_buyer_cost = Math.round(100000 * 0.08);
-      const sf_seller_ds = Math.round(seller_note * 0.07057);
+      const seller_note = this.data.asking_price - BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH - this.bank_loan;
+      const sf_buyer_cost = Math.round(BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_IO);
+      const sf_seller_ds = Math.round(seller_note * BIBLE_SHARED.K_SELLER);
 
       this.scenarios.push({
         dscr,
         structure: 'Seller Finance',
         bank_loan: this.bank_loan,
-        buyer_cash_equity: 100000,
+        buyer_cash_equity: BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH,
         seller_carry: Math.max(0, seller_note),
         bank_ds: this.bank_ds,
         equity_cost: sf_buyer_cost,
@@ -114,17 +118,17 @@ export class BibleCalculator {
   private calculateCeilingPrices(): void {
     this.ceiling_prices = {
       'Bank Only': this.calcCeiling(this.bank_ds, 0, 0),
-      '8% Equity IO': this.calcCeiling(this.bank_ds, this.buyer_equity * 0.08, 0),
-      '8% Equity Amort': this.calcCeiling(this.bank_ds, this.buyer_equity * 0.09577, 0),
-      'Seller Finance': this.calcCeiling(this.bank_ds, 100000 * 0.08, this.buyer_equity * 0.07057),
+      '8% Equity IO': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_IO, 0),
+      '8% Equity Amort': this.calcCeiling(this.bank_ds, this.buyer_equity * BIBLE_SHARED.K_AMORT, 0),
+      'Seller Finance': this.calcCeiling(this.bank_ds, BIBLE_SHARED.SELLER_FINANCE_BUYER_CASH * BIBLE_SHARED.K_IO, this.buyer_equity * BIBLE_SHARED.K_SELLER),
     };
   }
 
   private calcCeiling(bank_ds: number, equity_cost: number, seller_ds: number): any {
     return {
-      pocket_25k: Math.round(((25000 + bank_ds + equity_cost + seller_ds) / 0.08679) / 0.75),
-      pocket_10k: Math.round(((10000 + bank_ds + equity_cost + seller_ds) / 0.08679) / 0.75),
-      breakeven: Math.round(((bank_ds + equity_cost + seller_ds) / 0.08679) / 0.75),
+      pocket_25k: Math.round(((25000 + bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
+      pocket_10k: Math.round(((10000 + bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
+      breakeven: Math.round(((bank_ds + equity_cost + seller_ds) / this.constants.K_COMM) / this.constants.LTV),
     };
   }
 }

@@ -6,6 +6,7 @@ export default function Home() {
     asking_price: '',
     gross_income: '',
     seller_expenses: '',
+    asset_type: 'Commercial',
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -30,6 +31,7 @@ export default function Home() {
           asking_price: parseFloat(form.asking_price) || 0,
           gross_income: parseFloat(form.gross_income) || 0,
           seller_expenses: form.seller_expenses ? parseFloat(form.seller_expenses) : undefined,
+          asset_type: form.asset_type,
         }),
       });
 
@@ -50,7 +52,7 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 40, fontFamily: 'system-ui' }}>
       <h1 style={{ color: '#1e3c72', marginBottom: 10 }}>Raw Deal Verifier</h1>
-      <p style={{ color: '#666', marginBottom: 30 }}>Bible-Based Commercial Property Analysis</p>
+      <p style={{ color: '#666', marginBottom: 30 }}>Bible-Based Property Analysis (All Asset Types)</p>
 
       {!result ? (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
@@ -69,6 +71,23 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
             <div>
+              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Asset Type *</label>
+              <select
+                name="asset_type"
+                value={form.asset_type}
+                onChange={handleChange}
+                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+              >
+                <option>Commercial</option>
+                <option>Residential</option>
+                <option>Storage</option>
+                <option>MHP</option>
+                <option>RV Park</option>
+                <option>Mixed-Use</option>
+              </select>
+            </div>
+
+            <div>
               <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Asking Price *</label>
               <input
                 type="number"
@@ -80,9 +99,11 @@ export default function Home() {
                 style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
               />
             </div>
+          </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
             <div>
-              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Gross Income *</label>
+              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Annual Gross Income *</label>
               <input
                 type="number"
                 name="gross_income"
@@ -93,18 +114,18 @@ export default function Home() {
                 style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
               />
             </div>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Seller Expenses (Optional)</label>
-            <input
-              type="number"
-              name="seller_expenses"
-              value={form.seller_expenses}
-              onChange={handleChange}
-              placeholder="Leave blank to use 35% floor"
-              style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
-            />
+            <div>
+              <label style={{ display: 'block', marginBottom: 5, fontWeight: 600 }}>Seller Expenses (Optional)</label>
+              <input
+                type="number"
+                name="seller_expenses"
+                value={form.seller_expenses}
+                onChange={handleChange}
+                placeholder="Leave blank to use Bible floor"
+                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+              />
+            </div>
           </div>
 
           {error && <div style={{ color: '#c00', padding: 10, background: '#fee', borderRadius: 4 }}>{error}</div>}
@@ -131,13 +152,15 @@ export default function Home() {
             ← Back
           </button>
 
-          <h2 style={{ color: '#1e3c72', marginBottom: 20 }}>Team Analysis Report</h2>
+          <h2 style={{ color: '#1e3c72', marginBottom: 20 }}>
+            Team Analysis Report ({result.calculator_data.asset_type})
+          </h2>
 
           {Object.entries(result.sections || {}).map(([key, section]: [string, any]) => (
             <div key={key} style={{ marginBottom: 30, border: '1px solid #ddd', padding: 20, borderRadius: 4 }}>
               <h3 style={{ color: '#1e3c72', marginBottom: 15 }}>{section.title}</h3>
               {section.rows ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                   <tbody>
                     {section.rows.map((row: any, i: number) => (
                       <tr key={i} style={{ background: i === 0 ? '#e7e6e6' : i % 2 ? '#f2f2f2' : 'white' }}>
