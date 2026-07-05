@@ -16,12 +16,12 @@ export default function Home() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [pastedText, setPastedText] = useState('');
 
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileRead = async (file) => {
+  const handleFileRead = async (file: File) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -87,7 +87,7 @@ export default function Home() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -312,3 +312,4 @@ export default function Home() {
     </div>
   );
 }
+
