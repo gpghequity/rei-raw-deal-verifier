@@ -9,7 +9,7 @@ export default function Home() {
     asset_type: 'Commercial',
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
 
   const [uploadError, setUploadError] = useState('');
@@ -41,7 +41,7 @@ export default function Home() {
       let fileContent = '';
       let textToParse = pastedText;
 
-      const fileInput = document.getElementById('fileInput');
+      const fileInput = document.getElementById('fileInput') as HTMLInputElement;
       if (fileInput?.files?.length) {
         const file = fileInput.files[0];
         const dataUrl = await handleFileRead(file);
@@ -312,4 +312,5 @@ export default function Home() {
     </div>
   );
 }
+
 
